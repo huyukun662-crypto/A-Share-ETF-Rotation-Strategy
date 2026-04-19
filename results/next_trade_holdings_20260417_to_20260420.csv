@@ -1,0 +1,7 @@
+symbol,name,current_weight,target_weight,delta_weight,action,trigger_type
+515880.SH,通信ETF国泰,0.2583,0.2000,-0.0583,减仓，减少 5.83%,weekly_rebalance
+515980.SH,人工智能ETF,0.2560,0.2000,-0.0560,减仓，减少 5.60%,weekly_rebalance
+159755.SZ,电池ETF广发,0.2491,0.2000,-0.0491,减仓，减少 4.91%,weekly_rebalance
+159952.SZ,创业板ETF广发,0.0000,0.2000,0.2000,调入，增加 20.00%,weekly_rebalance
+515030.SH,新能源车ETF华夏,0.0000,0.2000,0.2000,调入，增加 20.00%,weekly_rebalance
+159992.SZ,创新药ETF,0.2366,0.0000,-0.2366,退出，减少 23.66%,weekly_rebalance

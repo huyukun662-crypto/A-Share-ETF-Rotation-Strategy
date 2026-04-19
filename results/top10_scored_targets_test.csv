@@ -1,0 +1,11 @@
+rank,date,symbol,name,category,rotation_score,rotation_candidate,soft_candidate,logbias,rsi14,ret_20,relative_strength
+1,2026-04-17,515880.SH,通信ETF国泰,stock,18.82,True,True,15.04,75.02,0.2509,0.2205
+2,2026-04-17,515980.SH,人工智能ETF,stock,10.78,True,True,9.45,67.89,0.1219,0.0915
+3,2026-04-17,159952.SZ,创业板ETF广发,stock,10.32,True,True,9.07,69.86,0.1117,0.0812
+4,2026-04-17,515030.SH,新能源车ETF华夏,stock,8.92,True,True,6.40,64.74,0.1228,0.0924
+5,2026-04-17,159755.SZ,电池ETF广发,stock,8.50,True,True,6.53,64.40,0.1135,0.0831
+6,2026-04-17,159779.SZ,消费电子ETF,stock,8.23,True,True,7.40,66.20,0.0937,0.0633
+7,2026-04-17,512480.SH,半导体ETF国联安,stock,5.99,True,True,5.54,62.24,0.0661,0.0357
+8,2026-04-17,159980.SZ,有色ETF大成,stock,5.63,True,True,3.11,62.34,0.0807,0.0503
+9,2026-04-17,563230.SH,卫星ETF富国,stock,4.62,True,True,4.32,59.52,0.0321,0.0016
+10,2026-04-17,159890.SZ,云计算ETF招商,stock,4.34,True,True,4.86,60.17,0.0306,0.0002

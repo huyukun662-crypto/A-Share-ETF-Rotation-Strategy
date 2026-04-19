@@ -1,0 +1,8 @@
+rank,date,symbol,name,category,rotation_score,rotation_candidate,soft_candidate,logbias,rsi14,ret_20,relative_strength
+1,2019-12-31,512880.SH,证券ETF国泰,stock,10.52,True,True,7.58,69.98,0.1429,0.0956
+2,2019-12-31,512690.SH,酒ETF鹏华,stock,5.21,True,True,3.49,66.32,0.0595,0.0121
+3,2019-12-31,512480.SH,半导体ETF国联安,stock,5.08,True,True,3.95,56.53,0.1005,0.0532
+4,2019-12-31,159952.SZ,创业板ETF广发,stock,4.12,True,True,2.90,60.57,0.0700,0.0227
+5,2019-12-31,515880.SH,通信ETF国泰,stock,3.29,False,True,2.16,58.96,0.0584,0.0111
+6,2019-12-31,159934.SZ,黄金ETF易方达,commodity,3.17,True,True,1.94,68.20,0.0323,-0.0150
+7,2019-12-31,512800.SH,银行ETF华宝,dividend,1.74,True,True,1.19,59.18,0.0338,-0.0135
