@@ -7,6 +7,12 @@
 > 2017–2019 validation, with a walk-forward out-of-sample test on
 > 2020-present.
 
+![Strategy NAV vs Benchmark · Excess NAV · Drawdown (OOS 2020-2026)](figures/train_test_comparison.png)
+
+> **OOS Highlights (2020–2026)**: Sharpe **1.48** · Annualised **35.25%** ·
+> Max Drawdown **-12.91%** · Calmar **2.73** · Benchmark (510300.SH)
+> annualised **-0.8%**.
+
 ---
 
 ## 简体中文
@@ -120,8 +126,12 @@ A 股市场的风格切换极为频繁：
 > 训练集收益受 2009–2012 低估值区间影响较大；参数选择以验证集最大
 > 回撤 ≤ 12% 为硬约束，使得策略在 OOS 的回撤同样可控。
 
+![策略 NAV vs 基准、超额 NAV、回撤对比（2020-2026 OOS）](figures/train_test_comparison.png)
+
+*OOS 区间：策略 NAV 由 1.0 攀升至约 5.05；基准 510300 在同期仅在 1.0 附近波动；超额 NAV 持续走高至 ~4.5；策略最大回撤 -12.91%，显著好于基准在 2024 年接近 -45% 的深度回撤。*
+
 ### 关键图表
-- `figures/train_test_comparison.png` — 策略 / 基准 NAV、超额 NAV、回撤叠加；
+- `figures/train_test_comparison.png` — 策略 / 基准 NAV、超额 NAV、回撤叠加（见上图）；
 - `figures/equity_curves_side_by_side.png` — 训练期 vs 样本外权益曲线并排对比；
 - `results/top10_scored_targets_test.csv` — 最新 Top 10 打分候选。
 
@@ -295,9 +305,16 @@ The full pipeline lives in `src/pipeline.py::main()`:
 > regime.  Parameter selection enforces a validation-set max-drawdown
 > of ≤ 12%, which translates to a similarly bounded OOS drawdown.
 
+![Strategy NAV vs Benchmark, Excess NAV, Drawdown (2020-2026 OOS)](figures/train_test_comparison.png)
+
+*OOS results: strategy NAV climbs from 1.0 to ~5.05 while the CSI-300
+ETF benchmark hovers near 1.0; excess NAV steadily rises to ~4.5; the
+strategy's max drawdown (-12.91%) is substantially shallower than the
+benchmark's ~-45% drawdown in late 2024.*
+
 ### Key Figures
 - `figures/train_test_comparison.png` — overlay of strategy / benchmark
-  NAV, excess NAV and drawdown across the OOS period.
+  NAV, excess NAV and drawdown across the OOS period (shown above).
 - `figures/equity_curves_side_by_side.png` — train vs OOS equity
   curves side-by-side.
 - `results/top10_scored_targets_test.csv` — latest Top-10 scored
