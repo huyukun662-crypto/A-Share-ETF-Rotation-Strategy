@@ -1,0 +1,30 @@
+name: Weekly ETF Signal
+
+on:
+  schedule:
+    # 每天 UTC 09:01 运行（对应北京时间 17:01）
+    - cron: '1 9 * * *'
+  # 允许在 GitHub Actions 页面手动点击触发
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run weekly signal script
+        run: PYTHONPATH=. python scripts/send_weekly_signal.py
+        env:
+          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
