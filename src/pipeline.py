@@ -33,6 +33,7 @@ from .config import (
     THREE_CLASS_MAP,
     TRAIN_END_DATE,
     TREND_ETF_POOL,
+    TUSHARE_TOKEN,
 )
 from .data_loader import align_market_data, get_symbol_label, load_tushare_daily
 from .indicators import (
@@ -138,12 +139,6 @@ def run_backtest_on_period(
 
     if equity_df is not None and not equity_df.empty:
         benchmark_curve = build_benchmark_curve(period_benchmark)
-        base_nav = float(equity_df["nav"].iloc[0])
-        if base_nav != 0:
-            equity_df["nav"] = equity_df["nav"] / base_nav
-            equity_df["equity"] = equity_df["nav"] * config.initial_capital
-            equity_df["cash"] = equity_df["cash"] / base_nav
-            equity_df["position_value"] = equity_df["position_value"] / base_nav
         equity_df = equity_df.merge(benchmark_curve, on="date", how="left")
         equity_df["benchmark_nav"] = equity_df["benchmark_nav"].ffill().bfill()
         equity_df["strategy_drawdown"] = build_drawdown_series(equity_df["nav"])
@@ -300,6 +295,10 @@ def load_universe() -> Tuple[Dict[str, pd.DataFrame], pd.DataFrame]:
 
 def main():
     """End-to-end: load data → optimize → backtest train/OOS → save artifacts."""
+    if not TUSHARE_TOKEN:
+        raise RuntimeError(
+            "TUSHARE_TOKEN is not set. The person running this script must provide it via environment variable before execution."
+        )
     print(f"\n{'=' * 60}")
     print("Weekly V2 RSI-Only Backtest With Local Neighborhood Search")
     print(f"{'=' * 60}")

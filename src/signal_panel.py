@@ -69,7 +69,9 @@ def prepare_panel_rsi_only(
         )
 
         relative_strength_filter = (
-            tmp["relative_strength"].gt(0) if config.use_relative_strength_filter else True
+            tmp["relative_strength"].gt(0)
+            if config.use_relative_strength_filter
+            else pd.Series(True, index=tmp.index)
         )
         tmp["rotation_candidate"] = (
             tmp["logbias"].gt(tmp["category_entry_threshold"])
@@ -168,7 +170,8 @@ def print_latest_buy_signal(latest_buy_signal: Optional[Dict[str, object]]) -> N
         return
 
     signal_date = pd.Timestamp(latest_buy_signal["signal_date"]).strftime("%Y-%m-%d")
-    execution_date = pd.Timestamp(latest_buy_signal["execution_date"]).strftime("%Y-%m-%d")
+    execution_date_value = latest_buy_signal.get("execution_date")
+    execution_date = pd.Timestamp(execution_date_value).strftime("%Y-%m-%d") if execution_date_value is not None else "N/A"
     print(f"\nLatest Buy Signal: signal_date={signal_date}, execution_date={execution_date}")
     for idx, item in enumerate(latest_buy_signal["allocations"], start=1):
         candidate_flag = "hard" if item["rotation_candidate"] else ("soft" if item["soft_candidate"] else "hold")
@@ -193,7 +196,8 @@ def print_signal_summary(trade_plan: Optional[Dict[str, object]]) -> None:
         return
 
     signal_date = pd.Timestamp(trade_plan["signal_date"]).strftime("%Y-%m-%d")
-    execution_date = pd.Timestamp(trade_plan["execution_date"]).strftime("%Y-%m-%d")
+    execution_date_value = trade_plan.get("execution_date")
+    execution_date = pd.Timestamp(execution_date_value).strftime("%Y-%m-%d") if execution_date_value is not None else "N/A"
     summary_map = {
         "weekly_rebalance": "周度调仓",
         "hard_exit": "日度hard-exit",

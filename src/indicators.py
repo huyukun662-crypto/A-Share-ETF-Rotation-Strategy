@@ -139,9 +139,11 @@ def calculate_performance_metrics(
     if benchmark_curve is not None and not benchmark_curve.empty:
         merged = equity_curve[["date", "nav"]].merge(benchmark_curve, on="date", how="left")
         merged["benchmark_nav"] = merged["benchmark_nav"].ffill().bfill()
-        excess_curve = merged["nav"] / merged["benchmark_nav"]
-        metrics["excess_return"] = float(excess_curve.iloc[-1] - 1.0)
-        metrics["annual_excess_return"] = float(excess_curve.iloc[-1] ** (252 / len(merged)) - 1.0) if len(merged) > 1 else 0.0
+        merged = merged.dropna(subset=["nav", "benchmark_nav"])
+        if not merged.empty:
+            excess_curve = merged["nav"] / merged["benchmark_nav"]
+            metrics["excess_return"] = float(excess_curve.iloc[-1] - 1.0)
+            metrics["annual_excess_return"] = float(excess_curve.iloc[-1] ** (252 / len(merged)) - 1.0) if len(merged) > 1 else 0.0
 
     return metrics
 

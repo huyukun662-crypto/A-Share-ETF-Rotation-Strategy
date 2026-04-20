@@ -113,7 +113,10 @@ class RSIRotationBacktester:
                 break
             if symbol not in selected and symbol in daily_map:
                 row = daily_map[symbol]
-                keep_cond = row.get("logbias", -99.0) > row.get("category_stop_threshold", -5.0) and row.get("rsi14", 0.0) > 47
+                keep_cond = (
+                    row.get("logbias", -99.0) > row.get("category_stop_threshold", -5.0)
+                    and row.get("rsi14", 0.0) > 47
+                )  # Keep 47 here: current runtime follows StrategyConfig defaults, not the separately saved optimized search parameters.
                 if keep_cond:
                     selected.append(symbol)
 
@@ -129,7 +132,7 @@ class RSIRotationBacktester:
             target_exposure = min(self._candidate_based_exposure(hard_count), exposure_cap)
             target_weights = {symbol: target_exposure / len(selected) for symbol in selected}
 
-        if self.config.defensive_mode != "bond" or defensive_cap <= 0:
+        if self.config.defensive_mode != "bond" or defensive_cap is None or defensive_cap <= 0:
             return target_weights
 
         allocated_weight = float(sum(target_weights.values()))
@@ -162,7 +165,7 @@ class RSIRotationBacktester:
     @staticmethod
     def _build_buy_signal_snapshot(
         signal_date: pd.Timestamp,
-        execution_date: pd.Timestamp,
+        execution_date: Optional[pd.Timestamp],
         daily_map: Dict[str, Dict],
         target_weights: Dict[str, float],
     ) -> Optional[Dict[str, object]]:
@@ -207,7 +210,7 @@ class RSIRotationBacktester:
     def _build_trade_plan_snapshot(
         self,
         signal_date: pd.Timestamp,
-        execution_date: pd.Timestamp,
+        execution_date: Optional[pd.Timestamp],
         daily_map: Dict[str, Dict],
         positions: Dict[str, float],
         open_trades: Dict[str, Dict],
@@ -476,7 +479,7 @@ class RSIRotationBacktester:
             })
 
             # Decide whether to generate a new weekly signal for next-day execution
-            next_trade_date = dates[idx + 1] if idx < len(dates) - 1 else pd.Timestamp(date) + pd.offsets.BDay(1)
+            next_trade_date = dates[idx + 1] if idx < len(dates) - 1 else None
             should_weekly_rotate = False
             if idx < len(dates) - 1 and self._should_rebalance(date, dates[idx + 1]):
                 should_weekly_rotate = True
