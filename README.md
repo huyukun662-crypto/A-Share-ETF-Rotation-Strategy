@@ -138,7 +138,7 @@ python -m src.pipeline
 jupyter notebook strategy/etf_sector_rotation_strategy.ipynb
 ```
 
-#### 6.4 自动化每周信号推送
+#### 6.4 自动化每周信号推送（微信通知）
 
 调仓信号触发逻辑已升级为：**每周最后一个 A 股交易日 17:00 后自动运行（非固定周五）**。此举自动规避了由于法定节假日造成的非工作日错位。
 
@@ -154,7 +154,18 @@ python scripts/send_weekly_signal.py
 python scripts/send_weekly_signal.py --date 2026-04-30 --force-run
 ```
 
-当满足“本周最后一个交易日且时间 >= 17:00”条件时，脚本将自动拉取数据、进行计算，并通过 ServerChan (配置 `SERVERCHAN_SENDKEY` 环境变量) 将格式化好的换仓打分 Markdown 结果推送到您的微信终端。
+**白嫖云端算力自动推送指南：**
+
+本项目已配置好 GitHub Actions。**任何人均可零成本实现每日自动监控与微信推送**，无需本地服务器：
+1. 点击本仓库右上角的 **Fork**，将其复制到你的账号下；
+2. 登录 [Server酱](https://sct.ftqq.com/) 免费获取你的 `SendKey`；
+3. 进入你 Fork 后的仓库，点击 **Settings** -> **Secrets and variables** -> **Actions**；
+4. 点击 **New repository secret**，分别添加两个环境变量：
+   - 名字：`TUSHARE_TOKEN`，值：你的 Tushare Pro Token
+   - 名字：`SERVERCHAN_SENDKEY`，值：你的 Server酱 SendKey
+5. 点击顶部的 **Actions** 标签页，启用工作流（点击 "I understand my workflows, go ahead and enable them"）。
+
+完成以上步骤后，GitHub 每天北京时间 17:00 都会免费为你运行检测，一旦符合“本周最后一个交易日”的条件，你的微信就会自动收到格式化好的调仓打分与建议。
 
 ### 7. 策略优势与特点
 
@@ -339,7 +350,7 @@ Includes interactive charts and factor exploration:
 jupyter notebook strategy/etf_sector_rotation_strategy.ipynb
 ```
 
-#### 6.4 Automated Weekly Signal Push
+#### 6.4 Automated Weekly Signal Push (WeChat Notification)
 
 The signal trigger logic has been upgraded: **it now automatically runs after 17:00 on the last A-share trading day of the week (no longer fixed to Friday)**. This smartly navigates holiday-shortened weeks without missing rotation windows.
 
@@ -355,7 +366,18 @@ It also supports back-testing historical signals and forced execution:
 python scripts/send_weekly_signal.py --date 2026-04-30 --force-run
 ```
 
-When the condition "Last Trading Day of the Week AND time >= 17:00" is met, the script fetches data, computes signals, and pushes the formatted Markdown results to your WeChat via ServerChan (requires `SERVERCHAN_SENDKEY` env variable).
+**Free Cloud Execution & WeChat Push Guide:**
+
+GitHub Actions are already pre-configured for this project. **Anyone can achieve daily automated monitoring and WeChat pushes at zero cost**, without the need for a local server:
+1. Click **Fork** at the top right of this repository to copy it to your own GitHub account.
+2. Log into [ServerChan (Server酱)](https://sct.ftqq.com/) to obtain a free `SendKey`.
+3. In your forked repository, go to **Settings** -> **Secrets and variables** -> **Actions**.
+4. Click **New repository secret** and add two environmental variables:
+   - Name: `TUSHARE_TOKEN`, Value: Your Tushare Pro Token
+   - Name: `SERVERCHAN_SENDKEY`, Value: Your ServerChan SendKey
+5. Go to the **Actions** tab at the top and enable the workflow (click "I understand my workflows, go ahead and enable them").
+
+Once configured, GitHub will automatically check daily at 17:00 Beijing Time. When the "last trading day of the week" condition is met, your WeChat will receive the formatted rotation scores and trading plan.
 
 ### 7. Strategic Advantages & Highlights
 
