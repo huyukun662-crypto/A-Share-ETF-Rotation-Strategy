@@ -2,8 +2,8 @@ name: Weekly ETF Signal
 
 on:
   schedule:
-    # 每天 UTC 09:01 运行（对应北京时间 17:01）
-    - cron: '1 9 * * *'
+    # 每天 UTC 09:00 运行（对应北京时间 17:00）
+    - cron: '0 9 * * *'
   # 允许在 GitHub Actions 页面手动点击触发
   workflow_dispatch:
 
