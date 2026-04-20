@@ -6,7 +6,17 @@
       "Bash(git remote *)",
       "Bash(git fetch *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git merge *)",
+      "Bash(git rebase *)",
+      "Bash(git reset *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(gh repo *)",
+      "Bash(curl *)",
+      "Bash(gh auth *)"
     ]
   }
 }

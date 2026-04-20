@@ -138,6 +138,24 @@ python -m src.pipeline
 jupyter notebook strategy/etf_sector_rotation_strategy.ipynb
 ```
 
+#### 6.4 自动化每周信号推送
+
+调仓信号触发逻辑已升级为：**每周最后一个 A 股交易日 17:00 后自动运行（非固定周五）**。此举自动规避了由于法定节假日造成的非工作日错位。
+
+要验证当日是否应执行轮动并推送结果，请使用新增的入口脚本：
+
+```bash
+python scripts/send_weekly_signal.py
+```
+
+支持强制运行与模拟历史回测调仓通知：
+
+```bash
+python scripts/send_weekly_signal.py --date 2026-04-30 --force-run
+```
+
+当满足“本周最后一个交易日且时间 >= 17:00”条件时，脚本将自动拉取数据、进行计算，并通过 ServerChan (配置 `SERVERCHAN_SENDKEY` 环境变量) 将格式化好的换仓打分 Markdown 结果推送到您的微信终端。
+
 ### 7. 策略优势与特点
 
 - **工程流水线完备**：覆盖从数据断点修复、除权对齐、因式组装到并行网格搜索的全链路；
@@ -320,6 +338,24 @@ Includes interactive charts and factor exploration:
 ```bash
 jupyter notebook strategy/etf_sector_rotation_strategy.ipynb
 ```
+
+#### 6.4 Automated Weekly Signal Push
+
+The signal trigger logic has been upgraded: **it now automatically runs after 17:00 on the last A-share trading day of the week (no longer fixed to Friday)**. This smartly navigates holiday-shortened weeks without missing rotation windows.
+
+To verify whether a rotation should execute today and push the results, use the new entry script:
+
+```bash
+python scripts/send_weekly_signal.py
+```
+
+It also supports back-testing historical signals and forced execution:
+
+```bash
+python scripts/send_weekly_signal.py --date 2026-04-30 --force-run
+```
+
+When the condition "Last Trading Day of the Week AND time >= 17:00" is met, the script fetches data, computes signals, and pushes the formatted Markdown results to your WeChat via ServerChan (requires `SERVERCHAN_SENDKEY` env variable).
 
 ### 7. Strategic Advantages & Highlights
 

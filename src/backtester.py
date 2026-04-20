@@ -483,7 +483,10 @@ class RSIRotationBacktester:
             should_weekly_rotate = False
             if idx < len(dates) - 1 and self._should_rebalance(date, dates[idx + 1]):
                 should_weekly_rotate = True
-            elif pd.Timestamp(date).weekday() == 4:
+            elif idx == len(dates) - 1 and getattr(self.config, "use_trading_calendar", False):
+                from .data_loader import is_last_trading_day_of_week
+                should_weekly_rotate = is_last_trading_day_of_week(date)
+            elif idx == len(dates) - 1 and pd.Timestamp(date).weekday() == 4:
                 should_weekly_rotate = True
 
             exposure_cap = None

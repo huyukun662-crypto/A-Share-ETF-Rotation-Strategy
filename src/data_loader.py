@@ -211,4 +211,43 @@ def align_market_data(data_dict: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFr
     return aligned
 
 
+def is_last_trading_day_of_week(target_date: str | pd.Timestamp) -> bool:
+    """Check if `target_date` is the last A-share trading day of its ISO calendar week."""
+    target_ts = pd.Timestamp(target_date).normalize()
+    try:
+        # Load the official trading calendar from Sina via AkShare
+        calendar_df = _retry_fetch(
+            lambda: ak.tool_trade_date_hist_sina(),
+            source_name="AkShare Calendar",
+            symbol="A-Share Calendar",
+            max_attempts=3,
+        )
+
+        # Parse and sort the dates
+        trade_dates = pd.to_datetime(calendar_df["trade_date"]).sort_values().reset_index(drop=True)
+
+        # Check if the target is even a trading day
+        if target_ts not in trade_dates.values:
+            return False
+
+        # Find the next trading day
+        idx = trade_dates[trade_dates == target_ts].index[0]
+        if idx >= len(trade_dates) - 1:
+            # Reached the end of the known calendar, assume it's true to be safe
+            return True
+
+        next_ts = trade_dates.iloc[idx + 1]
+
+        # If the ISO week of the *next* trading day is different from the target's ISO week,
+        # then the target is the last trading day of this week.
+        curr_iso = target_ts.isocalendar()
+        next_iso = next_ts.isocalendar()
+        return (curr_iso.year, curr_iso.week) != (next_iso.year, next_iso.week)
+
+    except Exception as exc:
+        print(f"  [WARN] Trading calendar lookup failed: {exc}. Falling back to Friday check.")
+        # Fallback if AkShare fails: assume Friday is the last day
+        return target_ts.weekday() == 4
+
+
 # duplicate legacy loader definitions removed

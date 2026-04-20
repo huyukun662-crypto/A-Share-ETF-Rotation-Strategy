@@ -30,6 +30,15 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 # Credentials (read from environment, never hard-coded)
 # ---------------------------------------------------------------------------
 TUSHARE_TOKEN = os.environ.get("TUSHARE_TOKEN", "")
+SERVERCHAN_SENDKEY = os.environ.get("SERVERCHAN_SENDKEY", "")
+
+# ---------------------------------------------------------------------------
+# Trigger & Notification Config
+# ---------------------------------------------------------------------------
+ENABLE_WECHAT_PUSH = bool(SERVERCHAN_SENDKEY)
+WEEKLY_SIGNAL_RUN_HOUR = 17
+USE_TRADING_CALENDAR = True
+NOTIFY_AFTER_WEEKLY_SIGNAL = True
 
 # ---------------------------------------------------------------------------
 # Date windows
@@ -241,3 +250,7 @@ class StrategyConfig:
     defensive_mode: str = "cash"
     defensive_allocation_cap: float = 0.0
     defensive_trigger_dd: float = -0.10
+
+    # Trigger & Notification Config
+    use_trading_calendar: bool = USE_TRADING_CALENDAR
+
