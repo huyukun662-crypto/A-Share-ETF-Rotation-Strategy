@@ -1,0 +1,98 @@
+{
+  "before": {
+    "train": {
+      "total_return": 0.3184631007501366,
+      "annual_return": 0.0483333722911079,
+      "max_drawdown": -0.10346751686646094,
+      "sharpe_ratio": 0.5422654302596693,
+      "calmar_ratio": 0.4671357132643742,
+      "win_rate": 0.39215686274509803,
+      "avg_hold_days": 14.343137254901961,
+      "turnover": 72.25148355990545,
+      "avg_exposure": 0.30800675992451865,
+      "min_exposure": 0.0,
+      "excess_return": -0.16179738419107526,
+      "annual_excess_return": -0.029683881154175307
+    },
+    "test": {
+      "total_return": 5.212895111404335,
+      "annual_return": 0.352616254335516,
+      "max_drawdown": -0.12914389892456624,
+      "sharpe_ratio": 1.4794121484047307,
+      "calmar_ratio": 2.7304135717745472,
+      "win_rate": 0.45524691358024694,
+      "avg_hold_days": 12.37962962962963,
+      "turnover": 261.0153808775803,
+      "avg_exposure": 0.8170677256050568,
+      "min_exposure": 0.0,
+      "excess_return": 4.409717065522894,
+      "annual_excess_return": 0.32200649023277905
+    },
+    "train_trade_count": 102,
+    "test_trade_count": 648
+  },
+  "after": {
+    "train": {
+      "total_return": 0.05524239249826013,
+      "annual_return": 0.009222597128329513,
+      "max_drawdown": -0.22318796673184993,
+      "sharpe_ratio": 0.14259865803548186,
+      "calmar_ratio": 0.04132210738498299,
+      "win_rate": 0.3655913978494624,
+      "avg_hold_days": 16.21505376344086,
+      "turnover": 89.43672541822627,
+      "avg_exposure": 0.31353340282983677,
+      "min_exposure": 0.0,
+      "excess_return": -0.3291378930504225,
+      "annual_excess_return": -0.06588402183848863
+    },
+    "test": {
+      "total_return": 1.002612268605875,
+      "annual_return": 0.12168354533700576,
+      "max_drawdown": -0.3256277152479756,
+      "sharpe_ratio": 0.6234402114166188,
+      "calmar_ratio": 0.37368915371451095,
+      "win_rate": 0.38825448613376834,
+      "avg_hold_days": 13.132137030995105,
+      "turnover": 301.3462578209079,
+      "avg_exposure": 0.8144423338678717,
+      "min_exposure": 0.0,
+      "excess_return": 0.7437226238081378,
+      "annual_excess_return": 0.09629979838687408
+    },
+    "train_trade_count": 93,
+    "test_trade_count": 613
+  },
+  "delta": {
+    "train": {
+      "annual_excess_return": -0.03620014068431332,
+      "annual_return": -0.03911077516277839,
+      "avg_exposure": 0.005526642905318124,
+      "avg_hold_days": 1.8719165085388987,
+      "calmar_ratio": -0.4258136058793912,
+      "excess_return": -0.16734050885934726,
+      "max_drawdown": -0.11972044986538899,
+      "min_exposure": 0.0,
+      "sharpe_ratio": -0.39966677222418745,
+      "total_return": -0.2632207082518765,
+      "turnover": 17.185241858320822,
+      "win_rate": -0.02656546489563566
+    },
+    "test": {
+      "annual_excess_return": -0.22570669184590497,
+      "annual_return": -0.23093270899851026,
+      "avg_exposure": -0.002625391737185123,
+      "avg_hold_days": 0.7525074013654756,
+      "calmar_ratio": -2.356724418060036,
+      "excess_return": -3.6659944417147567,
+      "max_drawdown": -0.1964838163234094,
+      "min_exposure": 0.0,
+      "sharpe_ratio": -0.8559719369881119,
+      "total_return": -4.21028284279846,
+      "turnover": 40.33087694332761,
+      "win_rate": -0.0669924274464786
+    },
+    "train_trade_count": -9,
+    "test_trade_count": -35
+  }
+}
