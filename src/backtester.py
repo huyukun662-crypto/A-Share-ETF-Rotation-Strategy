@@ -26,7 +26,6 @@ class RSIRotationBacktester:
     def __init__(self, config: StrategyConfig):
         self.config = config
 
-    # --- market-view construction --------------------------------------
     @staticmethod
     def _build_market_view(panel: Dict[str, pd.DataFrame]) -> Dict[pd.Timestamp, Dict[str, Dict]]:
         market_view = {}
@@ -42,7 +41,6 @@ class RSIRotationBacktester:
         current_iso, next_iso = date.isocalendar(), next_date.isocalendar()
         return (current_iso.year, current_iso.week) != (next_iso.year, next_iso.week)
 
-    # --- exposure control -----------------------------------------------
     def _candidate_based_exposure(self, hard_count: int) -> float:
         for min_count, exposure in self.config.candidate_exposure_map:
             if hard_count >= min_count:
@@ -72,7 +70,6 @@ class RSIRotationBacktester:
             return self.config.defensive_allocation_cap
         return 0.0
 
-    # --- target weights --------------------------------------------------
     def _generate_target_weights(
         self,
         daily_map: Dict[str, Dict],
@@ -116,7 +113,7 @@ class RSIRotationBacktester:
                 keep_cond = (
                     row.get("logbias", -99.0) > row.get("category_stop_threshold", -5.0)
                     and row.get("rsi14", 0.0) > 47
-                )  # Keep 47 here: current runtime follows StrategyConfig defaults, not the separately saved optimized search parameters.
+                )
                 if keep_cond:
                     selected.append(symbol)
 
@@ -152,7 +149,6 @@ class RSIRotationBacktester:
             target_weights[symbol] = defensive_weight
         return target_weights
 
-    # --- book-keeping helpers -------------------------------------------
     def _close_trade(self, open_trade: Dict, exit_date: pd.Timestamp, exit_price: float, exit_reason: str) -> Dict:
         trade = dict(open_trade)
         trade["exit_date"] = exit_date
@@ -321,8 +317,66 @@ class RSIRotationBacktester:
             "defensive_cap": defensive_cap,
         }
 
-    # --- order execution ------------------------------------------------
-    def _execute_target_weights(self, date, daily_map, cash, positions, target_weights, open_trades):
+    def _build_next_day_risk_orders(
+        self,
+        daily_map: Dict[str, Dict],
+        positions: Dict[str, float],
+    ) -> Dict[str, tuple[float, str]]:
+        risk_orders: Dict[str, tuple[float, str]] = {}
+
+        for symbol in list(positions.keys()):
+            row = daily_map.get(symbol)
+            if row is None or not row.get("is_trading", False) or pd.isna(row.get("close")):
+                continue
+
+            exit_rsi = row.get("exit_rsi_threshold", 45)
+            should_clear = (
+                row.get("logbias", np.nan) < row.get("category_stop_threshold", -5.0)
+                or (row.get("close", np.nan) < row.get("price_ema", np.nan) and row.get("rsi14", 100.0) < exit_rsi)
+            )
+            soft_trim = bool(
+                self.config.enable_overheat_trim
+                and (
+                    (row.get("rsi14", 0.0) > 78 and not bool(row.get("rsi_up", True)))
+                    or (
+                        row.get("logbias", 0.0) > row.get("category_overheat_threshold", 15.0)
+                        and row.get("logbias_slope", 0.0) < 0
+                    )
+                )
+            )
+            if should_clear:
+                risk_orders[symbol] = (1.0, "hard_exit")
+            elif soft_trim:
+                risk_orders[symbol] = (self.config.trim_ratio, "soft_trim")
+
+        return risk_orders
+
+    def _execute_risk_orders(self, date, daily_map, cash, positions, risk_orders, open_trades):
+        closed_trades = []
+        turnover_today = 0.0
+
+        for symbol, (ratio, trigger_type) in risk_orders.items():
+            row = daily_map.get(symbol)
+            if row is None or symbol not in positions or not row["is_trading"] or pd.isna(row["open"]):
+                continue
+            qty = positions[symbol]
+            if qty <= 0 or ratio <= 0:
+                continue
+            sell_qty = min(qty * ratio, qty)
+            sell_price = calc_trade_price(row["open"], self.config.slippage_rate, "sell")
+            amount = sell_qty * sell_price
+            cost = calc_transaction_cost(amount, self.config.fee_rate, self.config.stamp_duty_rate, "sell")
+            cash += amount - cost
+            turnover_today += amount
+            positions[symbol] -= sell_qty
+            if positions[symbol] <= 1e-8:
+                exit_reason = "rsi_exit" if trigger_type == "hard_exit" else "rsi_trim"
+                closed_trades.append(self._close_trade(open_trades.pop(symbol), date, sell_price, exit_reason))
+                del positions[symbol]
+
+        return cash, positions, turnover_today, closed_trades
+
+    def _execute_target_weights(self, date, daily_map, cash, positions, target_weights, open_trades, trigger_types=None):
         closed_trades = []
         turnover_today = 0.0
         total_value = cash + sum(
@@ -330,7 +384,6 @@ class RSIRotationBacktester:
             for s, qty in positions.items()
         )
 
-        # Sells first
         for symbol in list(positions.keys()):
             row = daily_map.get(symbol)
             if row is None or not row["is_trading"] or pd.isna(row["open"]):
@@ -348,10 +401,16 @@ class RSIRotationBacktester:
             turnover_today += amount
             positions[symbol] -= sell_qty
             if positions[symbol] <= 1e-8:
-                closed_trades.append(self._close_trade(open_trades.pop(symbol), date, sell_price, "rotation_rebalance"))
+                trigger_type = "" if trigger_types is None else str(trigger_types.get(symbol, ""))
+                if "hard_exit" in trigger_type:
+                    exit_reason = "rsi_exit"
+                elif "soft_trim" in trigger_type:
+                    exit_reason = "rsi_trim"
+                else:
+                    exit_reason = "rotation_rebalance"
+                closed_trades.append(self._close_trade(open_trades.pop(symbol), date, sell_price, exit_reason))
                 del positions[symbol]
 
-        # Buys second
         for symbol, weight in target_weights.items():
             row = daily_map.get(symbol)
             if row is None or not row["is_trading"] or pd.isna(row["open"]):
@@ -384,48 +443,6 @@ class RSIRotationBacktester:
 
         return cash, positions, turnover_today, closed_trades
 
-    def _apply_daily_risk_controls(self, date, daily_map, cash, positions, open_trades):
-        closed = []
-        for symbol in list(positions.keys()):
-            row = daily_map.get(symbol)
-            if row is None or not row["is_trading"] or pd.isna(row.get("open")):
-                continue
-            qty = positions[symbol]
-            if qty <= 0:
-                continue
-
-            exit_rsi = row.get("exit_rsi_threshold", 45)
-            should_clear = (
-                row.get("logbias", np.nan) < row.get("category_stop_threshold", -5.0)
-                or (row.get("close", np.nan) < row.get("price_ema", np.nan) and row.get("rsi14", 100.0) < exit_rsi)
-            )
-            soft_trim = bool(
-                self.config.enable_overheat_trim
-                and (
-                    (row.get("rsi14", 0.0) > 78 and not bool(row.get("rsi_up", True)))
-                    or (
-                        row.get("logbias", 0.0) > row.get("category_overheat_threshold", 15.0)
-                        and row.get("logbias_slope", 0.0) < 0
-                    )
-                )
-            )
-            if not should_clear and not soft_trim:
-                continue
-
-            ratio = 1.0 if should_clear else self.config.trim_ratio
-            sell_qty = qty * ratio
-            sell_price = calc_trade_price(row["open"], self.config.slippage_rate, "sell")
-            amount = sell_qty * sell_price
-            cost = calc_transaction_cost(amount, self.config.fee_rate, self.config.stamp_duty_rate, "sell")
-            cash += amount - cost
-            positions[symbol] -= sell_qty
-            if positions[symbol] <= 1e-8:
-                closed.append(self._close_trade(open_trades.pop(symbol), date, sell_price, "rsi_exit" if should_clear else "rsi_trim"))
-                del positions[symbol]
-
-        return cash, positions, closed
-
-    # --- main loop -------------------------------------------------------
     def run(
         self,
         panel: Dict[str, pd.DataFrame],
@@ -442,6 +459,8 @@ class RSIRotationBacktester:
         positions: Dict[str, float] = {}
         open_trades: Dict[str, Dict] = {}
         pending_weights = None
+        pending_trigger_types = None
+        pending_risk_orders = None
         latest_buy_signal = None
         latest_trade_plan = None
         trade_records: list = []
@@ -451,19 +470,22 @@ class RSIRotationBacktester:
             daily_map = market_view[date]
             turnover_today = 0.0
 
-            # Daily hard-exit / soft-trim risk controls
-            if self.config.enable_daily_stop and positions:
-                cash, positions, daily_closed = self._apply_daily_risk_controls(date, daily_map, cash, positions, open_trades)
-                trade_records.extend(daily_closed)
-
-            # Execute weekly rebalance from the previous day's signal
             if pending_weights is not None:
-                cash, positions, rebalance_turnover, closed = self._execute_target_weights(
-                    date, daily_map, cash, positions, pending_weights, open_trades
+                cash, positions, executed_turnover, closed = self._execute_target_weights(
+                    date, daily_map, cash, positions, pending_weights, open_trades, pending_trigger_types
                 )
-                turnover_today += rebalance_turnover
+                turnover_today += executed_turnover
                 trade_records.extend(closed)
                 pending_weights = None
+                pending_trigger_types = None
+                pending_risk_orders = None
+            elif pending_risk_orders is not None:
+                cash, positions, executed_turnover, closed = self._execute_risk_orders(
+                    date, daily_map, cash, positions, pending_risk_orders, open_trades
+                )
+                turnover_today += executed_turnover
+                trade_records.extend(closed)
+                pending_risk_orders = None
 
             equity = cash + sum(qty * daily_map[s]["close"] for s, qty in positions.items())
             equity_peak = max(equity_peak, equity)
@@ -478,7 +500,6 @@ class RSIRotationBacktester:
                 "turnover": turnover_today,
             })
 
-            # Decide whether to generate a new weekly signal for next-day execution
             next_trade_date = dates[idx + 1] if idx < len(dates) - 1 else None
             should_weekly_rotate = False
             if idx < len(dates) - 1 and self._should_rebalance(date, dates[idx + 1]):
@@ -496,7 +517,6 @@ class RSIRotationBacktester:
                 exposure_cap = self._get_drawdown_exposure_cap(equity, equity_peak)
                 defensive_cap = self._get_defensive_allocation_cap(equity, equity_peak)
                 weekly_target_weights = self._generate_target_weights(daily_map, open_trades, exposure_cap, defensive_cap)
-                pending_weights = weekly_target_weights
                 latest_buy_signal = self._build_buy_signal_snapshot(
                     signal_date=date,
                     execution_date=next_trade_date,
@@ -517,7 +537,30 @@ class RSIRotationBacktester:
                 defensive_cap=defensive_cap,
             )
 
-        # Force-close any surviving open trades for accounting
+            if next_trade_date is None:
+                pending_weights = None
+                pending_trigger_types = None
+                pending_risk_orders = None
+            elif should_weekly_rotate:
+                pending_weights = dict(latest_trade_plan["target_weights"])
+                pending_trigger_types = dict(latest_trade_plan["trigger_types"])
+                pending_risk_orders = None
+                if pending_weights == {}:
+                    pending_weights = None
+                    pending_trigger_types = None
+                elif pending_trigger_types == {}:
+                    pending_trigger_types = None
+            elif self.config.enable_daily_stop and positions:
+                pending_risk_orders = self._build_next_day_risk_orders(daily_map, positions)
+                pending_weights = None
+                pending_trigger_types = None
+                if pending_risk_orders == {}:
+                    pending_risk_orders = None
+            else:
+                pending_weights = None
+                pending_trigger_types = None
+                pending_risk_orders = None
+
         if open_trades and dates:
             last_map = market_view[dates[-1]]
             last_date = dates[-1]
