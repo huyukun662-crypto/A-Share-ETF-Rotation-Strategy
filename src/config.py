@@ -218,7 +218,7 @@ class StrategyConfig:
     top_n: int = 5
     fee_rate: float = 0.0003
     slippage_rate: float = 0.0005
-    stamp_duty_rate: float = 0.0
+    stamp_duty_rate: float = 0.001  # 0.1% for A-share ETF sells (fixed from 0.0)
     initial_capital: float = 1_000_000.0
     dynamic_holdings: bool = True
     min_holdings: int = 3

@@ -24,19 +24,10 @@ import pandas as pd
 
 from .backtester import RSIRotationBacktester
 from .config import (
-    BEST_OOS_BASELINE_PARAMS,
-    CANDIDATE_EXPOSURE_MAP_OPTIONS,
-    EMA_WINDOW_RANGE,
-    EXPOSURE_MAP_VERSION_RANGE,
-    N_WORKERS,
-    RSI_ENTRY_RANGE,
-    RSI_EXIT_RANGE,
-    StrategyConfig,
-    TRAIN_SEARCH_END_DATE,
-    TRAIN_SEARCH_START_DATE,
-    VALIDATION_DRAWDOWN_CAP,
-    VALIDATION_END_DATE,
-    VALIDATION_START_DATE,
+    BEST_OOS_BASELINE_PARAMS, EXPOSURE_MAP_VERSION_RANGE, EMA_WINDOW_RANGE,
+    RSI_ENTRY_RANGE, RSI_EXIT_RANGE,
+    CATEGORY_ENTRY_SHIFT_RANGE, CATEGORY_SOFT_SHIFT_RANGE, CATEGORY_STOP_SHIFT_RANGE,
+    STRONG_DAYS_SHIFT_RANGE, USE_RELATIVE_STRENGTH_FILTER_RANGE,
 )
 from .data_loader import align_market_data
 from .indicators import (
@@ -337,10 +328,10 @@ def optimize_params_on_training_set(raw_data: Dict[str, pd.DataFrame], benchmark
                 "strong_days_shift", "use_relative_strength_filter",
             ],
             product(
-                [-1.2, -0.6], [-1.2, -0.6], [-1.2, -0.6],
-                [-0.3, 0.0], [-0.6, -0.3], [-0.6, -0.3],
-                [-0.5, 0.0], [-0.5, 0.0], [-0.5, 0.0],
-                [-1, 0], [False],
+                CATEGORY_ENTRY_SHIFT_RANGE, CATEGORY_ENTRY_SHIFT_RANGE, CATEGORY_ENTRY_SHIFT_RANGE,
+                CATEGORY_SOFT_SHIFT_RANGE, CATEGORY_SOFT_SHIFT_RANGE, CATEGORY_SOFT_SHIFT_RANGE,
+                CATEGORY_STOP_SHIFT_RANGE, CATEGORY_STOP_SHIFT_RANGE, CATEGORY_STOP_SHIFT_RANGE,
+                STRONG_DAYS_SHIFT_RANGE, USE_RELATIVE_STRENGTH_FILTER_RANGE,
             ),
         ),
     ]
