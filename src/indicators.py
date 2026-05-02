@@ -26,9 +26,9 @@ def calculate_indicators(df: pd.DataFrame, ema_window: int, slope_lookback: int 
     """Attach LogBias, price-EMA, 20-day return and slope to a price frame."""
     out = df.copy()
     out["log_close"] = np.log(out["close"])
-    out["log_ema"] = out["log_close"].ewm(span=ema_window, adjust=False, min_periods=ema_window).mean()
-    out["logbias"] = (out["log_close"] - out["log_ema"]) * 100
     out["price_ema"] = out["close"].ewm(span=ema_window, adjust=False, min_periods=ema_window).mean()
+    out["log_ema"] = np.log(out["price_ema"])
+    out["logbias"] = (out["log_close"] - out["log_ema"]) * 100
     out["ret_20"] = out["close"].pct_change(20)
     out["logbias_slope"] = out["logbias"] - out["logbias"].shift(slope_lookback)
     return out
@@ -43,8 +43,11 @@ def calc_rsi(series: pd.Series, period: int = 14) -> pd.Series:
     avg_loss = loss.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
     rs = avg_gain / avg_loss.replace(0, np.nan)
     rsi = 100 - 100 / (1 + rs)
-    rsi = rsi.where(avg_loss.ne(0), 100)
-    rsi = rsi.where(avg_gain.ne(0), 0)
+    # P4 FIX: Correct flat-line handling (avg_gain == avg_loss == 0 → RSI = 50, not 0)
+    # P4 FIX: Order matter — set neutral 50 FIRST, then override one-sided cases
+    rsi = rsi.where((avg_gain != 0) | (avg_loss != 0), 50.0)
+    rsi = rsi.where(avg_loss != 0, 100.0)
+    rsi = rsi.where(avg_gain != 0, 0.0)
     return rsi
 
 
@@ -115,7 +118,7 @@ def calculate_performance_metrics(
     annual_return = float(nav.iloc[-1] ** (252 / total_days) - 1.0) if total_days > 1 else 0.0
     max_drawdown = float(build_drawdown_series(nav).min()) if len(nav) > 0 else 0.0
     sharpe = float(daily_ret.mean() / daily_ret.std(ddof=0) * np.sqrt(252)) if daily_ret.std(ddof=0) > 0 else -np.inf
-    calmar = float(annual_return / abs(max_drawdown)) if max_drawdown < 0 else 0.0
+    calmar = float(annual_return / abs(max_drawdown)) if max_drawdown != 0 else np.inf
     closed_trades = trades[trades["exit_date"].notna()].copy() if not trades.empty else pd.DataFrame()
     win_rate = float((closed_trades["trade_return"] > 0).mean()) if not closed_trades.empty else np.nan
     avg_hold_days = float(closed_trades["holding_days"].mean()) if not closed_trades.empty else np.nan
@@ -138,7 +141,7 @@ def calculate_performance_metrics(
 
     if benchmark_curve is not None and not benchmark_curve.empty:
         merged = equity_curve[["date", "nav"]].merge(benchmark_curve, on="date", how="left")
-        merged["benchmark_nav"] = merged["benchmark_nav"].ffill().bfill()
+        merged["benchmark_nav"] = merged["benchmark_nav"].ffill()
         merged = merged.dropna(subset=["nav", "benchmark_nav"])
         if not merged.empty:
             excess_curve = merged["nav"] / merged["benchmark_nav"]
