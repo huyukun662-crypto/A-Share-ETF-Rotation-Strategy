@@ -16,6 +16,7 @@ import pandas as pd
 from .config import (
     BOND_CLASS_MAP,
     ENTRY,
+    ETF_LISTING_DATES,
     OVERHEAT,
     SOFT,
     STOP,
@@ -49,6 +50,17 @@ def prepare_panel_rsi_only(
         category = THREE_CLASS_MAP.get(symbol)
         if category is None:
             continue
+
+        # --- P1 FIX: Skip symbols whose listing date is after the earliest
+        # date present in `df`. This prevents "phantom" participation of
+        # ETFs that were not yet listed when the backtest period began.
+        # ----------------------------------------------------------------
+        earliest_date = pd.Timestamp(df["date"].min())
+        listing_dt = pd.Timestamp(ETF_LISTING_DATES.get(symbol))
+        if earliest_date < listing_dt:
+            df = df[df["date"] >= listing_dt].copy()
+            if df.empty:
+                continue
 
         tmp = calculate_indicators(df, ema_window=config.ema_window)
         tmp["rsi14"] = calc_rsi(tmp["close"], 14)
@@ -112,12 +124,24 @@ def prepare_panel_rsi_only(
 
 
 def prepare_defensive_bond_panel(aligned: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
-    """Slim OHLC panel for bond ETFs used as the defensive allocation pool."""
+    """Slim OHLC panel for bond ETFs used as the defensive allocation pool,
+    enriched with a simple quality/momentum score so the backtester can
+    allocate defensively toward higher-quality bonds rather than equally-
+    weighting all bond ETFs blindly."""
     panel: Dict[str, pd.DataFrame] = {}
     for symbol, df in aligned.items():
         if symbol not in BOND_CLASS_MAP:
             continue
-        panel[symbol] = df[["date", "open", "close", "is_trading"]].copy()
+        tmp = df[["date", "open", "close", "is_trading", "volume"]].copy()
+        tmp["ret_20"] = tmp["close"].pct_change(20)
+        tmp["ret_7d"] = tmp["close"].pct_change(5)
+        tmp["vol_20"] = tmp["close"].pct_change().rolling(20, min_periods=1).std()
+        tmp["bond_score"] = (
+            0.5 * tmp["ret_20"].fillna(0.0) * 100
+            + 0.3 * tmp["ret_7d"].fillna(0.0) * 100
+            - 0.2 * tmp["vol_20"].fillna(0.0) * 100
+        )
+        panel[symbol] = tmp
     return panel
 
 
