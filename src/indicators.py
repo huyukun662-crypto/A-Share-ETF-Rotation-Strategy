@@ -223,3 +223,21 @@ def calc_transaction_cost(amount: float, fee_rate: float, stamp_duty_rate: float
     if side == "sell":
         cost += amount * stamp_duty_rate
     return cost
+
+
+def calc_realized_vol(series: pd.Series, window: int = 21, annualize: bool = True) -> pd.Series:
+    daily_ret = series.pct_change().fillna(0.0)
+    rolling_std = daily_ret.rolling(window, min_periods=max(window // 2, 5)).std(ddof=0)
+    if annualize:
+        return rolling_std * np.sqrt(252)
+    return rolling_std
+
+
+def calc_vol_target_exposure(
+    daily_vol: pd.Series,
+    target_vol: float,
+    min_exp: float = 0.30,
+    max_exp: float = 1.0,
+) -> pd.Series:
+    raw = target_vol / daily_vol.replace(0, np.nan)
+    return raw.clip(min_exp, max_exp)
